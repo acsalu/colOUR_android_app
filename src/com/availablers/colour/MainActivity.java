@@ -1,30 +1,44 @@
 package com.availablers.colour;
 
-import android.app.ActionBar;
-import android.app.FragmentTransaction;
-import android.content.Context;
-import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.NavUtils;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class MainActivity extends FragmentActivity implements ActionBar.TabListener {
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+
+public class MainActivity extends Activity { //implements ActionBar.TabListener {
 
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
-
+    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
+	private static final int REQUEST_CODE = 1;
+    
+    private Bitmap bitmap;
+    private ImageView capturedImage;
+    private Button capturePhoto;
+    
+    public static final int MEDIA_TYPE_IMAGE = 1;
+    private Uri fileUri;
+    
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        findViews();
+        setListeners();
+        /*
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -33,7 +47,32 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section1).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section2).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section3).setTabListener(this));
+    	*/
     }
+    
+    private void findViews() {
+    	this.capturedImage = (ImageView) findViewById(R.id.captured_image);
+    	this.capturePhoto = (Button) findViewById(R.id.capture_photo);
+    }
+    
+    private void setListeners() {
+    	this.capturePhoto.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Log.d("colOUR.UI", "Attempt to capture image");
+				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+				fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
+				intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+				
+				// start the image capture Intent
+				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+				
+			}
+		});
+    }
+    
+    
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -55,8 +94,63 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         return true;
     }
 
-    
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.d("colOUR.activity", "back to MainActivity");
+		// TODO
+		if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+			if (resultCode == RESULT_OK) {
+				//Toast.makeText(this, "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
+				//Bitmap photo = (Bitmap) data.getExtras().get("data");
+				//this.capturedImage.setImageBitmap(photo);
+			} else if (resultCode == RESULT_CANCELED) {
+				// User cancelled the image capture
+				// nothing should happen
+			} else {
+				// Image capture failed, advise user
+			}
+		}
+		super.onActivityResult(requestCode, resultCode, data);	
+	}
 
+	/**
+	 * code for saving the image
+	 */
+	
+    private static Uri getOutputMediaFileUri(int type) {
+    	// Log.d("colOUR.IO", fileUri.toString());
+    	return Uri.fromFile(getOutputMediaFile(type));
+    }
+    
+    private static File getOutputMediaFile(int type) {
+    	// To be safe, you should check that the SDCard is mounted
+    	// using Environment.getExternalStorageState() before doing this.
+    	Log.d("colOUR.IO", Environment.getExternalStorageState());
+    	
+    	File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "colOUR");
+    	if (!mediaStorageDir.exists()) {
+    		if (!mediaStorageDir.mkdirs()) {
+    			Log.d("colOUR.IO", "failed to create directory");
+    			return null;
+    		}
+    	}
+    	
+    	// Create a media file name
+    	String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+    	File mediaFile = null;
+    	if (type == MEDIA_TYPE_IMAGE) {
+    		String path = mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg";
+        	mediaFile = new File(path);
+        	Bundle bundle = new Bundle();
+    		Log.d("colOUR.IO", "media file " + path + " saved");
+    	}
+    	return mediaFile;
+    }
+	
+	
+	
+	
+    /*
     @Override
     public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
@@ -76,10 +170,13 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     @Override
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
-
+	*/
+    
     /**
      * A dummy fragment representing a section of the app, but that simply displays dummy text.
      */
+    
+    /*
     public static class DummySectionFragment extends Fragment {
         public DummySectionFragment() {
         }
@@ -96,4 +193,6 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
             return textView;
         }
     }
+    */
+    
 }
