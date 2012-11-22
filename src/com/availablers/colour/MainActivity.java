@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -16,12 +17,13 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity { //implements ActionBar.TabListener {
 
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
-	private static final int REQUEST_CODE = 1;
+	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
     
     private Bitmap bitmap;
     private ImageView capturedImage;
@@ -62,8 +64,8 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
 			public void onClick(View v) {
 				Log.d("colOUR.UI", "Attempt to capture image");
 				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-				fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
-				intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+				//fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
+				//intent.putExtra(MediaStore.EXTRA_OUTPUT, MyFileContentProvider.CONTENT_URI);
 				
 				// start the image capture Intent
 				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
@@ -71,47 +73,7 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
 			}
 		});
     }
-    
-    
 
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
-            getActionBar().setSelectedNavigationItem(
-                    savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
-        }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putInt(STATE_SELECTED_NAVIGATION_ITEM,
-                getActionBar().getSelectedNavigationIndex());
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_main, menu);
-        return true;
-    }
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.d("colOUR.activity", "back to MainActivity");
-		// TODO
-		if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-			if (resultCode == RESULT_OK) {
-				//Toast.makeText(this, "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
-				//Bitmap photo = (Bitmap) data.getExtras().get("data");
-				//this.capturedImage.setImageBitmap(photo);
-			} else if (resultCode == RESULT_CANCELED) {
-				// User cancelled the image capture
-				// nothing should happen
-			} else {
-				// Image capture failed, advise user
-			}
-		}
-		super.onActivityResult(requestCode, resultCode, data);	
-	}
 
 	/**
 	 * code for saving the image
@@ -147,9 +109,64 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     	return mediaFile;
     }
 	
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		Log.d("colOUR.activity", "back to MainActivity");
+		if (data == null) {
+			Log.d("colOUR.activity", "data is null");
+		}
+		
+		switch (requestCode) {
+		case CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE: 
+			if (resultCode == RESULT_OK) {
+				Toast.makeText(this, "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
+				fileUri = data.getData();
+				performCrop();
+				//Bitmap photo = (Bitmap) data.getExtras().get("data");
+				//this.capturedImage.setImageBitmap(photo);
+			} else if (resultCode == RESULT_CANCELED) {
+				// User cancelled the image capture
+				// nothing should happen
+			}
+			break;
+		case CROP_IMAGE_ACTIVITY_REQUEST_CODE:
+			if (resultCode == RESULT_OK) {
+				Bundle extras = data.getExtras();
+				Bitmap pic = extras.getParcelable("data");
+				capturedImage.setImageBitmap(pic);
+			}
+			
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
 	
 	
+	private void performCrop() {
+		try {
+			// a crop Intent
+			Intent intent = new Intent("com.android.camera.action.CROP");
+			intent.setDataAndType(fileUri, "image/*");
+			intent.putExtra("crop", true);
+			//intent.putExtra("aspectX", 1);
+			//intent.putExtra("aspectY", 1);
+			//intent.putExtra("outputX", 256);
+			//intent.putExtra("outputY", 256);
+			intent.putExtra("return-data", true);
+			    //start the activity - we handle returning in onActivityResult
+			startActivityForResult(intent, CROP_IMAGE_ACTIVITY_REQUEST_CODE);
+		} catch (ActivityNotFoundException anfe) {
+			String errorMessage = "Whoops - your device doesn't support the crop action";
+		}
+	}
 	
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_main, menu);
+        return true;
+    }
+    
+    
     /*
     @Override
     public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
