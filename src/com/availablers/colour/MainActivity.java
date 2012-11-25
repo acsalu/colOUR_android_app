@@ -19,12 +19,15 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.parse.LogInCallback;
 import com.parse.Parse;
+import com.parse.ParseException;
 import com.parse.ParseFacebookUtils;
-import com.parse.ParseObject;
+import com.parse.ParseUser;
 
 public class MainActivity extends Activity { //implements ActionBar.TabListener {
 
+	// application IDs, keys
 	private static final String PARSE_APP_ID = "zWVIbuBEOCQmQEP8YGdpu9Fag3FdDowmpnogl41x";
 	private static final String PARSE_CLIENT_KEY = "RS2i8WSFWnIgrN3NNFIApvymSEIeddGzyjzpAoMJ";
 	private static final String FACEBOOK_APP_ID = "509468125744251";
@@ -34,9 +37,11 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
     
+	// UI elements
     private ImageView capturedImage;
     private Button capturePhoto;
     private Button cropImage;
+    private Button buttonLogin;
     
     public static final int MEDIA_TYPE_IMAGE = 1;
     private Uri fileUri;
@@ -69,7 +74,7 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     private void initialParse() {
     	Parse.initialize(this, PARSE_APP_ID, PARSE_CLIENT_KEY);
     	// enable SSO
-        ParseFacebookUtils.initialize(FACEBOOK_APP_ID, true);	
+        ParseFacebookUtils.initialize(FACEBOOK_APP_ID);	
         
     }
     
@@ -78,6 +83,7 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     	this.capturedImage = (ImageView) findViewById(R.id.captured_image);
     	this.capturePhoto = (Button) findViewById(R.id.capture_photo);
     	this.cropImage = (Button) findViewById(R.id.crop_image);
+    	this.buttonLogin = (Button) findViewById(R.id.login_fb);
     }
     
     private void setListeners() {
@@ -96,6 +102,24 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
 			@Override
 			public void onClick(View v) {
 				performCrop();
+			}
+		});
+    	
+    	this.buttonLogin.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				ParseFacebookUtils.logIn(MainActivity.this, new LogInCallback() {
+					  @Override
+					  public void done(ParseUser user, ParseException err) {
+					    if (user == null) {
+					      Log.d("MyApp", "Uh oh. The user cancelled the Facebook login.");
+					    } else if (user.isNew()) {
+					      Log.d("MyApp", "User signed up and logged in through Facebook!");
+					    } else {
+					      Log.d("MyApp", "User logged in through Facebook!");
+					    }
+					  }
+				});
 			}
 		});
     }
