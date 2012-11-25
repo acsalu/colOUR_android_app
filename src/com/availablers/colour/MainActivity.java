@@ -19,15 +19,24 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.parse.Parse;
+import com.parse.ParseFacebookUtils;
+import com.parse.ParseObject;
+
 public class MainActivity extends Activity { //implements ActionBar.TabListener {
 
+	private static final String PARSE_APP_ID = "zWVIbuBEOCQmQEP8YGdpu9Fag3FdDowmpnogl41x";
+	private static final String PARSE_CLIENT_KEY = "RS2i8WSFWnIgrN3NNFIApvymSEIeddGzyjzpAoMJ";
+	private static final String FACEBOOK_APP_ID = "509468125744251";
+	
+	
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
     
-    private Bitmap bitmap;
     private ImageView capturedImage;
     private Button capturePhoto;
+    private Button cropImage;
     
     public static final int MEDIA_TYPE_IMAGE = 1;
     private Uri fileUri;
@@ -38,8 +47,13 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initialParse();
         findViews();
         setListeners();
+        
+        
+       
+        
         /*
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
@@ -52,24 +66,36 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     	*/
     }
     
+    private void initialParse() {
+    	Parse.initialize(this, PARSE_APP_ID, PARSE_CLIENT_KEY);
+    	// enable SSO
+        ParseFacebookUtils.initialize(FACEBOOK_APP_ID, true);	
+        
+    }
+    
+    
     private void findViews() {
     	this.capturedImage = (ImageView) findViewById(R.id.captured_image);
     	this.capturePhoto = (Button) findViewById(R.id.capture_photo);
+    	this.cropImage = (Button) findViewById(R.id.crop_image);
     }
     
     private void setListeners() {
     	this.capturePhoto.setOnClickListener(new View.OnClickListener() {
-			
 			@Override
 			public void onClick(View v) {
 				Log.d("colOUR.UI", "Attempt to capture image");
 				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 				//fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
 				//intent.putExtra(MediaStore.EXTRA_OUTPUT, MyFileContentProvider.CONTENT_URI);
-				
-				// start the image capture Intent
 				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-				
+			}
+		});
+    	
+    	this.cropImage.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				performCrop();
 			}
 		});
     }
@@ -122,9 +148,10 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
 			if (resultCode == RESULT_OK) {
 				Toast.makeText(this, "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
 				fileUri = data.getData();
-				performCrop();
-				//Bitmap photo = (Bitmap) data.getExtras().get("data");
-				//this.capturedImage.setImageBitmap(photo);
+				//performCrop();
+				Bundle extras = data.getExtras();
+				Bitmap pic = extras.getParcelable("data");
+				capturedImage.setImageBitmap(pic);
 			} else if (resultCode == RESULT_CANCELED) {
 				// User cancelled the image capture
 				// nothing should happen
