@@ -31,6 +31,12 @@ public class StartUpActivity extends Activity {
 		initParse();
 		findViews();
 		setListeners();
+		
+		if (ParseUser.getCurrentUser() != null) {
+			Intent intent = new Intent(getBaseContext(), MainActivity.class);
+		    startActivity(intent);
+		    finish();
+		}
 	}
 	
 	private void initParse() {

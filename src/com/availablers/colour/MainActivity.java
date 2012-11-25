@@ -4,7 +4,8 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import android.app.Activity;
+import android.app.ActionBar;
+import android.app.ActionBar.Tab;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -12,39 +13,37 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.parse.LogInCallback;
-import com.parse.Parse;
-import com.parse.ParseException;
-import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
 
-public class MainActivity extends Activity { //implements ActionBar.TabListener {
-
-	// application IDs, keys
-	private static final String PARSE_APP_ID = "zWVIbuBEOCQmQEP8YGdpu9Fag3FdDowmpnogl41x";
-	private static final String PARSE_CLIENT_KEY = "RS2i8WSFWnIgrN3NNFIApvymSEIeddGzyjzpAoMJ";
-	private static final String FACEBOOK_APP_ID = "509468125744251";
+public class MainActivity extends FragmentActivity implements ActionBar.TabListener {
 	
 	
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
+    public static final int MEDIA_TYPE_IMAGE = 1;
+    private Uri fileUri;
     
+	
 	// UI elements
     private ImageView capturedImage;
     private Button capturePhoto;
     private Button cropImage;
-    private Button buttonLogin;
-    
-    public static final int MEDIA_TYPE_IMAGE = 1;
-    private Uri fileUri;
+    private TextView textUserName;
     
     
     @Override
@@ -52,14 +51,13 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initialParse();
         findViews();
         setListeners();
         
+        textUserName.setText(ParseUser.getCurrentUser().getUsername());
         
-       
         
-        /*
+        
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -68,14 +66,7 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section1).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section2).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section3).setTabListener(this));
-    	*/
-    }
-    
-    private void initialParse() {
-    	Parse.initialize(this, PARSE_APP_ID, PARSE_CLIENT_KEY);
-    	// enable SSO
-        ParseFacebookUtils.initialize(FACEBOOK_APP_ID);	
-        
+    	
     }
     
     
@@ -83,7 +74,7 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     	this.capturedImage = (ImageView) findViewById(R.id.captured_image);
     	this.capturePhoto = (Button) findViewById(R.id.capture_photo);
     	this.cropImage = (Button) findViewById(R.id.crop_image);
-    	this.buttonLogin = (Button) findViewById(R.id.login_fb);
+    	this.textUserName = (TextView) findViewById(R.id.text_username);
     }
     
     private void setListeners() {
@@ -102,24 +93,6 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
 			@Override
 			public void onClick(View v) {
 				performCrop();
-			}
-		});
-    	
-    	this.buttonLogin.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				ParseFacebookUtils.logIn(MainActivity.this, new LogInCallback() {
-					  @Override
-					  public void done(ParseUser user, ParseException err) {
-					    if (user == null) {
-					      Log.d("MyApp", "Uh oh. The user cancelled the Facebook login.");
-					    } else if (user.isNew()) {
-					      Log.d("MyApp", "User signed up and logged in through Facebook!");
-					    } else {
-					      Log.d("MyApp", "User logged in through Facebook!");
-					    }
-					  }
-				});
 			}
 		});
     }
@@ -218,33 +191,14 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
     }
     
     
-    /*
-    @Override
-    public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-    }
-
-    @Override
-    public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-        // When the given tab is selected, show the tab contents in the container
-        Fragment fragment = new DummySectionFragment();
-        Bundle args = new Bundle();
-        args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, tab.getPosition() + 1);
-        fragment.setArguments(args);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, fragment)
-                .commit();
-    }
-
-    @Override
-    public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-    }
-	*/
+    
+	
     
     /**
      * A dummy fragment representing a section of the app, but that simply displays dummy text.
      */
     
-    /*
+    
     public static class DummySectionFragment extends Fragment {
         public DummySectionFragment() {
         }
@@ -261,6 +215,33 @@ public class MainActivity extends Activity { //implements ActionBar.TabListener 
             return textView;
         }
     }
-    */
+
+
+	@Override
+	public void onTabReselected(Tab tab, android.app.FragmentTransaction ft) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void onTabSelected(Tab tab, android.app.FragmentTransaction ft) {
+		// When the given tab is selected, show the tab contents in the container
+        Fragment fragment = new DummySectionFragment();
+        Bundle args = new Bundle();
+        args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, tab.getPosition() + 1);
+        fragment.setArguments(args);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, fragment)
+                .commit();
+	}
+
+
+	@Override
+	public void onTabUnselected(Tab tab, android.app.FragmentTransaction ft) {
+		// TODO Auto-generated method stub
+		
+	}
+    
     
 }
