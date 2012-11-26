@@ -24,12 +24,9 @@ import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -47,17 +44,11 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 	
 	
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
-    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
-	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
-    public static final int MEDIA_TYPE_IMAGE = 1;
-    private Uri fileUri;
+    
+    
     
 	
-	// UI elements
-    private ImageView capturedImage;
-    private Button capturePhoto;
-    private Button cropImage;
-    private TextView textUserName;
+	
     
     private AsyncFacebookRunner asyncRunner;
     
@@ -66,11 +57,11 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        /*
         findViews();
         setListeners();
         
-        textUserName.setText(ParseUser.getCurrentUser().getUsername());
+       
         Facebook facebook = ParseFacebookUtils.getFacebook();
         asyncRunner = new AsyncFacebookRunner(facebook);
         
@@ -80,8 +71,18 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 			public void onComplete(String arg0, Object arg1) {
 
 				try {
-					JSONObject json = Util.parseJson(arg0);
-					Log.d("colOUR.Facebook", "Hi, " + json.getString("name"));
+					final JSONObject json = Util.parseJson(arg0);
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								textUserName.setText("Hi, " + json.getString("name"));
+							} catch (JSONException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					});
 					URL img_url = new URL("http://graph.facebook.com/" + json.getString("id") + "/picture?type=small");
 					Bitmap bmp = BitmapFactory.decodeStream(img_url.openConnection().getInputStream());
 					
@@ -126,7 +127,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 			}
     		
     	});
-        
+        */
+    	
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -136,75 +138,22 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section2).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section3).setTabListener(this));
     	
+        actionBar.selectTab(actionBar.getTabAt(1));
     }
     
     
-    private void findViews() {
-    	this.capturedImage = (ImageView) findViewById(R.id.captured_image);
-    	this.capturePhoto = (Button) findViewById(R.id.capture_photo);
-    	this.cropImage = (Button) findViewById(R.id.crop_image);
-    	this.textUserName = (TextView) findViewById(R.id.text_username);
-    }
     
-    private void setListeners() {
-    	this.capturePhoto.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Log.d("colOUR.UI", "Attempt to capture image");
-				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-				//fileUri = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
-				//intent.putExtra(MediaStore.EXTRA_OUTPUT, MyFileContentProvider.CONTENT_URI);
-				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-			}
-		});
-    	
-    	this.cropImage.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				performCrop();
-			}
-		});
-    }
+    
+    
 
 
-	/**
-	 * code for saving the image
-	 */
 	
-    private static Uri getOutputMediaFileUri(int type) {
-    	// Log.d("colOUR.IO", fileUri.toString());
-    	return Uri.fromFile(getOutputMediaFile(type));
-    }
-    
-    private static File getOutputMediaFile(int type) {
-    	// To be safe, you should check that the SDCard is mounted
-    	// using Environment.getExternalStorageState() before doing this.
-    	Log.d("colOUR.IO", Environment.getExternalStorageState());
-    	
-    	File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "colOUR");
-    	if (!mediaStorageDir.exists()) {
-    		if (!mediaStorageDir.mkdirs()) {
-    			Log.d("colOUR.IO", "failed to create directory");
-    			return null;
-    		}
-    	}
-    	
-    	// Create a media file name
-    	String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-    	File mediaFile = null;
-    	if (type == MEDIA_TYPE_IMAGE) {
-    		String path = mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg";
-        	mediaFile = new File(path);
-        	Bundle bundle = new Bundle();
-    		Log.d("colOUR.IO", "media file " + path + " saved");
-    	}
-    	return mediaFile;
-    }
 	
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		Log.d("colOUR.activity", "back to MainActivity");
+		/*
 		if (data == null) {
 			Log.d("colOUR.activity", "data is null");
 		}
@@ -231,34 +180,19 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 			}
 			
 		}
+		*/
 		super.onActivityResult(requestCode, resultCode, data);
 	}
 	
 	
-	private void performCrop() {
-		try {
-			// a crop Intent
-			Intent intent = new Intent("com.android.camera.action.CROP");
-			intent.setDataAndType(fileUri, "image/*");
-			intent.putExtra("crop", true);
-			//intent.putExtra("aspectX", 1);
-			//intent.putExtra("aspectY", 1);
-			//intent.putExtra("outputX", 256);
-			//intent.putExtra("outputY", 256);
-			intent.putExtra("return-data", true);
-			    //start the activity - we handle returning in onActivityResult
-			startActivityForResult(intent, CROP_IMAGE_ACTIVITY_REQUEST_CODE);
-		} catch (ActivityNotFoundException anfe) {
-			String errorMessage = "Whoops - your device doesn't support the crop action";
-		}
-	}
+	
 	
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        //getMenuInflater().inflate(R.menu.activity_main, menu);
-        //return true;
-    	menu.add(0, 0, 0, "Logout");
-    	return super.onCreateOptionsMenu(menu);
+        getMenuInflater().inflate(R.menu.activity_main, menu);
+        return true;
+    	//menu.add(0, 0, 0, "Logout");
+    	//return true;
     }
     
     @Override
@@ -274,13 +208,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     	return super.onOptionsItemSelected(item);
     }
     
-    
+    /*
 	
-    
-    /**
-     * A dummy fragment representing a section of the app, but that simply displays dummy text.
-     */
-    
     
     public static class DummySectionFragment extends Fragment {
         public DummySectionFragment() {
@@ -300,7 +229,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         }
     }
 
-
+	*/
 	@Override
 	public void onTabReselected(Tab tab, android.app.FragmentTransaction ft) {
 		// TODO Auto-generated method stub
@@ -311,13 +240,34 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 	@Override
 	public void onTabSelected(Tab tab, android.app.FragmentTransaction ft) {
 		// When the given tab is selected, show the tab contents in the container
-        Fragment fragment = new DummySectionFragment();
+        /*
+		Fragment fragment = new DummySectionFragment();
         Bundle args = new Bundle();
         args.putInt(DummySectionFragment.ARG_SECTION_NUMBER, tab.getPosition() + 1);
         fragment.setArguments(args);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.container, fragment)
                 .commit();
+        */
+		Log.d("colOUR.UI", "Tab" + tab.getPosition() + " selected");
+		Fragment fragment = null;
+		switch (tab.getPosition()) {
+		case 0:
+			fragment = new ColoursFragment();
+			break;
+		case 1:
+			fragment = new QuestFragment();
+			break;
+		case 2:
+			fragment = new AchievementFragment();
+			break;
+		default:
+			return;
+		}
+		
+		getSupportFragmentManager().beginTransaction()
+        .replace(R.id.container, fragment)
+        .commit();
 	}
 
 
