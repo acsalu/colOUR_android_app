@@ -1,25 +1,33 @@
 package com.availablers.colour;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -27,7 +35,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
+import com.parse.facebook.AsyncFacebookRunner;
+import com.parse.facebook.AsyncFacebookRunner.RequestListener;
+import com.parse.facebook.Facebook;
+import com.parse.facebook.FacebookError;
+import com.parse.facebook.Util;
 
 public class MainActivity extends FragmentActivity implements ActionBar.TabListener {
 	
@@ -45,6 +59,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     private Button cropImage;
     private TextView textUserName;
     
+    private AsyncFacebookRunner asyncRunner;
+    
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,8 +71,61 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         setListeners();
         
         textUserName.setText(ParseUser.getCurrentUser().getUsername());
+        Facebook facebook = ParseFacebookUtils.getFacebook();
+        asyncRunner = new AsyncFacebookRunner(facebook);
         
-        
+    	asyncRunner.request("me", new RequestListener() {
+
+			@Override
+			public void onComplete(String arg0, Object arg1) {
+
+				try {
+					JSONObject json = Util.parseJson(arg0);
+					Log.d("colOUR.Facebook", "Hi, " + json.getString("name"));
+					URL img_url = new URL("http://graph.facebook.com/" + json.getString("id") + "/picture?type=small");
+					Bitmap bmp = BitmapFactory.decodeStream(img_url.openConnection().getInputStream());
+					
+				} catch (FacebookError e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+
+			@Override
+			public void onFacebookError(FacebookError arg0, Object arg1) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onFileNotFoundException(FileNotFoundException arg0,
+					Object arg1) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onIOException(IOException arg0, Object arg1) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void onMalformedURLException(MalformedURLException arg0,
+					Object arg1) {
+			}
+    		
+    	});
         
         // Set up the action bar.
         final ActionBar actionBar = getActionBar();
@@ -186,10 +255,24 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 	
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_main, menu);
-        return true;
+        //getMenuInflater().inflate(R.menu.activity_main, menu);
+        //return true;
+    	menu.add(0, 0, 0, "Logout");
+    	return super.onCreateOptionsMenu(menu);
     }
     
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	
+    	switch (item.getItemId()) {
+    	case 0:
+    		ParseUser.logOut();
+    		Intent intent = new Intent(MainActivity.this, StartUpActivity.class);
+    		startActivity(intent);
+    		finish();
+    	}
+    	return super.onOptionsItemSelected(item);
+    }
     
     
 	
@@ -208,6 +291,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
+        	
             TextView textView = new TextView(getActivity());
             textView.setGravity(Gravity.CENTER);
             Bundle args = getArguments();
