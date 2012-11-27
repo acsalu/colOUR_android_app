@@ -45,11 +45,6 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 	
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
     
-    
-    
-	
-	
-    
     private AsyncFacebookRunner asyncRunner;
     
     
@@ -57,11 +52,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        /*
-        findViews();
-        setListeners();
         
-       
+        /*
         Facebook facebook = ParseFacebookUtils.getFacebook();
         asyncRunner = new AsyncFacebookRunner(facebook);
         
@@ -138,53 +130,9 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section2).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section3).setTabListener(this));
     	
+        // By default, select tab1
         actionBar.selectTab(actionBar.getTabAt(1));
-    }
-    
-    
-    
-    
-    
-
-
-	
-	
-
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		Log.d("colOUR.activity", "back to MainActivity");
-		/*
-		if (data == null) {
-			Log.d("colOUR.activity", "data is null");
-		}
-		
-		switch (requestCode) {
-		case CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE: 
-			if (resultCode == RESULT_OK) {
-				Toast.makeText(this, "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
-				fileUri = data.getData();
-				//performCrop();
-				Bundle extras = data.getExtras();
-				Bitmap pic = extras.getParcelable("data");
-				capturedImage.setImageBitmap(pic);
-			} else if (resultCode == RESULT_CANCELED) {
-				// User cancelled the image capture
-				// nothing should happen
-			}
-			break;
-		case CROP_IMAGE_ACTIVITY_REQUEST_CODE:
-			if (resultCode == RESULT_OK) {
-				Bundle extras = data.getExtras();
-				Bitmap pic = extras.getParcelable("data");
-				capturedImage.setImageBitmap(pic);
-			}
-			
-		}
-		*/
-		super.onActivityResult(requestCode, resultCode, data);
-	}
-	
-	
+    }	
 	
 	
     @Override
@@ -207,29 +155,7 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     	}
     	return super.onOptionsItemSelected(item);
     }
-    
-    /*
-	
-    
-    public static class DummySectionFragment extends Fragment {
-        public DummySectionFragment() {
-        }
-
-        public static final String ARG_SECTION_NUMBER = "section_number";
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-        	
-            TextView textView = new TextView(getActivity());
-            textView.setGravity(Gravity.CENTER);
-            Bundle args = getArguments();
-            textView.setText(Integer.toString(args.getInt(ARG_SECTION_NUMBER)));
-            return textView;
-        }
-    }
-
-	*/
+   
 	@Override
 	public void onTabReselected(Tab tab, android.app.FragmentTransaction ft) {
 		// TODO Auto-generated method stub
