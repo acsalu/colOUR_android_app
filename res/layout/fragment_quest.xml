@@ -11,6 +11,22 @@
         android:layout_height="wrap_content"
         android:text="Capture" />
     
+    <ImageView
+        android:id="@+id/image_showcase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+ 
+    
+    
+    <LinearLayout 
+        android:id="@+id/fragment_quest_quests_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+        
+        
+        
+    </LinearLayout>
+    
 	
     
 

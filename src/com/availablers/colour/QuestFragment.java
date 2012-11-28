@@ -1,5 +1,7 @@
 package com.availablers.colour;
 
+import java.util.Random;
+
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -7,14 +9,17 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,6 +31,8 @@ public class QuestFragment extends Fragment {
 	private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
     public static final int MEDIA_TYPE_IMAGE = 1;
+    private static final String QUEST_KEY_SELECTED_QUEST_INDEX = "selectedQuest.index";
+    private static final String QUEST_KEY_QUESTS_INDEX = "quests.index";
     private Uri fileUri;
 	
 	// UI elements
@@ -35,7 +42,9 @@ public class QuestFragment extends Fragment {
     
     private View.OnClickListener imageCaptureListener;
     
+    private int selectedColourQuestIndex;
     private ColourQuest selectedColourQuest;
+    private int colourQuestsIndex;
     private ColourQuest[] colourQuests;
 	private Canvas mCanvas;
     private Paint mPaint;
@@ -54,38 +63,49 @@ public class QuestFragment extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		findViews();
-		mCanvas = new Canvas();
 		
 		imageCaptureListener= new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Log.d("colOUR.UI", "Attempt to capture image");
 				Button b = (Button) v;
-				Log.d("colOUR.colour", "quest: " + colourQuests[b.getId()] + " is selected");
+				Log.d("colOUR.colour", "quest: (H, S, V) = " + colourQuests[b.getId()] + " is selected");
+				selectedColourQuestIndex = b.getId();	
 				selectedColourQuest = colourQuests[b.getId()];
 				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 				QuestFragment.this.startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-				
 			}
 		};
 		
-		/*
-		Log.d("Colour.test", "hi");
-		Log.d("Colour.quest", "quest: " + colourQuest + " is assigned");
-		mPaint = new Paint();
-		mPaint.setColor(Color.rgb(colourQuest.r, colourQuest.g, colourQuest.b));
-		mPaint.setStyle(Paint.Style.FILL);
-		mCanvas.drawRect(new Rect(150, 300, 260, 400), mPaint);
-		*/
 		
-		LinearLayout layout = (LinearLayout) getView().findViewById(R.id.fragment_quest_layout);
+		if (savedInstanceState != null) {
+			Log.d("colOUR.activity", "onActivityCreated with savedInstanceState");
+			
+			selectedColourQuestIndex = savedInstanceState.getInt(QUEST_KEY_SELECTED_QUEST_INDEX);
+			colourQuestsIndex = savedInstanceState.getInt(QUEST_KEY_QUESTS_INDEX);
+			
+			Log.d("colOUR.activity", "selectedColourQuestIndex = " + selectedColourQuestIndex);
+			Log.d("colOUR.activity", "colourQuestsIndex = " + colourQuestsIndex);
+			
+			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
+			selectedColourQuest = colourQuests[selectedColourQuestIndex];
+		}
+			Random r = new Random();
+			colourQuestsIndex = r.nextInt(4 - 0);
+			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
+			
 		
-		colourQuests = new ColourQuest[10];
 		
-		for (int i = 0; i < 10; ++i) {
-			colourQuests[i] = ColourQuest.genColourQuest();
+		LinearLayout layout = (LinearLayout) getView().findViewById(R.id.fragment_quest_quests_layout);
+		
+		Display display = getActivity().getWindowManager().getDefaultDisplay();
+		Point size = new Point();
+		display.getSize(size);
+		
+		for (int i = 0; i < colourQuests.length; ++i) {
 			Button questButton = new Button(getActivity());
-			questButton.setHeight(100);
+			questButton.setLayoutParams(new LayoutParams(size.x / colourQuests.length, 300));
+			//questButton.setWidth(getView().getWidth() / colourQuests.length);
 			questButton.setBackgroundColor(colourQuests[i] .getColor());
 			layout.addView(questButton);
 			questButton.setOnClickListener(imageCaptureListener);
@@ -130,7 +150,21 @@ public class QuestFragment extends Fragment {
 				int[] averageARGB = averageARGB(pic);
 				float[] resultHSV = new float[3];
 				Color.RGBToHSV(averageARGB[1], averageARGB[2], averageARGB[3], resultHSV);
-				Log.d("colOUR.colour", "result: (" + resultHSV[0] + ", " + resultHSV[1] + ", " + resultHSV[2] + ")");
+				if (selectedColourQuest == null) {
+					Log.d("colOUR.activity", "GG");
+				} else {
+					Log.d("colOUR.colour", "quest:  (H, S, V) = " + selectedColourQuest.toString());
+				}
+				Log.d("colOUR.colour", "result: (H, S, V) = (" + resultHSV[0] + ", " + resultHSV[1] + ", " + resultHSV[2] + ")");
+				
+				
+				/*
+				if (isHsvMatch(selectedColourQuest.getHSV(), resultHSV)) {
+					Toast.makeText(getActivity(), "Pass!!!", Toast.LENGTH_LONG).show();
+				} else {
+					Toast.makeText(getActivity(), "Failed...", Toast.LENGTH_LONG).show();
+				}
+				*/
 				//imageResult.setImageBitmap(pic);
 			}
 			
@@ -196,6 +230,58 @@ public class QuestFragment extends Fragment {
 		
 	}
 	
+	private static boolean isHsvMatch(float[] quest, float[] result) {
+		return ((result[0] <= quest[0] + 5 || result[0] >= quest[0] - 5) &&
+				(result[1] <= quest[1] + 0.1 || result[1] >= quest[1] - 0.1) &&
+				(result[2] <= quest[2] + 0.1 || result[2] >= quest[2] - 0.1));
+	}
+
+	
+
+
+	@Override
+	public void onPause() {
+		// TODO Auto-generated method stub
+		super.onPause();
+		Log.d("colOUR.lifecycle", "QuestFragment.onPause()");
+	}
+
+
+
+	@Override
+	public void onStop() {
+		// TODO Auto-generated method stub
+		super.onStop();
+		Log.d("colOUR.lifecycle", "QuestFragment.onStop()");
+	}
+
+	@Override
+	public void onDestroyView() {
+		// TODO Auto-generated method stub
+		super.onDestroyView();
+		Log.d("colOUR.lifecycle", "QuestFragment.onDestroyView()");
+	}
+
+	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		Log.d("colOUR.lifecycle", "QuestFragment.onDestroy()");
+		
+	}
+
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		outState.putInt(QUEST_KEY_SELECTED_QUEST_INDEX, selectedColourQuestIndex);
+		outState.putInt(QUEST_KEY_QUESTS_INDEX, colourQuestsIndex);
+	}
+	
+	
+	
+	
+	
 	// code for saving the image
 	/* 
 	
@@ -229,6 +315,9 @@ public class QuestFragment extends Fragment {
     	return mediaFile;
     }
     */
+	
+	
+	
 	
 	
 }
