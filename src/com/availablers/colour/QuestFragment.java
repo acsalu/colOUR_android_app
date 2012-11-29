@@ -34,13 +34,26 @@ public class QuestFragment extends Fragment {
     private static final String QUEST_KEY_SELECTED_QUEST_INDEX = "selectedQuest.index";
     private static final String QUEST_KEY_QUESTS_INDEX = "quests.index";
     private Uri fileUri;
+    
+    private static final int[] QUESTS_DRAWABLE_ID = {R.drawable.quests_0, R.drawable.quests_1, 
+    												 R.drawable.quests_2, R.drawable.quests_3, R.drawable.quests_4};
 	
 	// UI elements
     //private Button buttonCaptureImage;
-    private TextView textUserName;
-    private ImageView imageResult;
+    private ImageView imageShowcase;
     
-    private View.OnClickListener imageCaptureListener;
+    private View.OnClickListener imageCaptureListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			Log.d("colOUR.UI", "Attempt to capture image");
+			Button b = (Button) v;
+			Log.d("colOUR.colour", "quest: (H, S, V) = " + colourQuests[b.getId()] + " is selected");
+			selectedColourQuestIndex = b.getId();	
+			selectedColourQuest = colourQuests[b.getId()];
+			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+			QuestFragment.this.startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+		}
+	};
     
     private int selectedColourQuestIndex;
     private ColourQuest selectedColourQuest;
@@ -64,22 +77,10 @@ public class QuestFragment extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		findViews();
 		
-		imageCaptureListener= new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Log.d("colOUR.UI", "Attempt to capture image");
-				Button b = (Button) v;
-				Log.d("colOUR.colour", "quest: (H, S, V) = " + colourQuests[b.getId()] + " is selected");
-				selectedColourQuestIndex = b.getId();	
-				selectedColourQuest = colourQuests[b.getId()];
-				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-				QuestFragment.this.startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-			}
-		};
-		
+
 		
 		if (savedInstanceState != null) {
-			Log.d("colOUR.activity", "onActivityCreated with savedInstanceState");
+			Log.d("colOUR.activity", "onActivityCreated w/ savedInstanceState");
 			
 			selectedColourQuestIndex = savedInstanceState.getInt(QUEST_KEY_SELECTED_QUEST_INDEX);
 			colourQuestsIndex = savedInstanceState.getInt(QUEST_KEY_QUESTS_INDEX);
@@ -89,12 +90,18 @@ public class QuestFragment extends Fragment {
 			
 			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
 			selectedColourQuest = colourQuests[selectedColourQuestIndex];
-		}
-			Random r = new Random();
-			colourQuestsIndex = r.nextInt(4 - 0);
-			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
+		} else {
+			Log.d("colOUR.activity", "onActivityCreated w/o savedInstanceState");
 			
+			Random r = new Random();
+			colourQuestsIndex = r.nextInt(5 - 0);
+			
+			Log.d("colOUR.activity", "colourQuestsIndex = " + colourQuestsIndex);
+			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
+		}
 		
+
+		imageShowcase.setImageResource(QUESTS_DRAWABLE_ID[colourQuestsIndex]);
 		
 		LinearLayout layout = (LinearLayout) getView().findViewById(R.id.fragment_quest_quests_layout);
 		
@@ -102,15 +109,20 @@ public class QuestFragment extends Fragment {
 		Point size = new Point();
 		display.getSize(size);
 		
+		Log.d("colOUR.UI", "display size = (" + size.x + ", " + size.y + ")");
+		if (colourQuests == null) {
+			Log.d("colOUR.QuestFragment", "gonna gg");
+		}
 		for (int i = 0; i < colourQuests.length; ++i) {
 			Button questButton = new Button(getActivity());
-			questButton.setLayoutParams(new LayoutParams(size.x / colourQuests.length, 300));
-			//questButton.setWidth(getView().getWidth() / colourQuests.length);
+			questButton.setLayoutParams(new LayoutParams(size.x / colourQuests.length, 500));
 			questButton.setBackgroundColor(colourQuests[i] .getColor());
 			layout.addView(questButton);
 			questButton.setOnClickListener(imageCaptureListener);
 			questButton.setId(i);
 		}
+		
+		//imageShowcase.setImageDrawable(getView().getResources().getDrawable(R.drawable.quests_1));
 		
 		
 		
@@ -176,8 +188,7 @@ public class QuestFragment extends Fragment {
 
 
 	private void findViews() {
-    	this.textUserName = (TextView) getView().findViewById(R.id.text_username);
-    	//this.imageResult = (ImageView) getView().findViewById(R.id.image_result);
+    	this.imageShowcase = (ImageView) getView().findViewById(R.id.image_showcase);
     }
 	
 	
@@ -257,7 +268,6 @@ public class QuestFragment extends Fragment {
 
 	@Override
 	public void onDestroyView() {
-		// TODO Auto-generated method stub
 		super.onDestroyView();
 		Log.d("colOUR.lifecycle", "QuestFragment.onDestroyView()");
 	}
@@ -273,6 +283,7 @@ public class QuestFragment extends Fragment {
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
+		Log.d("colOUR.lifecycle", "QuestFragment.onSaveInstanceState");
 		super.onSaveInstanceState(outState);
 		outState.putInt(QUEST_KEY_SELECTED_QUEST_INDEX, selectedColourQuestIndex);
 		outState.putInt(QUEST_KEY_QUESTS_INDEX, colourQuestsIndex);

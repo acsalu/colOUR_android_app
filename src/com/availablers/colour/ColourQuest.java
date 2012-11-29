@@ -13,11 +13,11 @@ public class ColourQuest implements Parcelable {
 	public final int b;
 	public final Date start;
 	
-	public static final int QUEST_SPRING_SYMPHONY = 1;
-	public static final int QUEST_SPECTRAL = 2;
-	public static final int QUEST_AUTUMN_APPROACH = 3;
-	public static final int QUEST_WINTER_WONDERLAND = 4;
-	public static final int QUEST_NIGHT_AT_THE_BEACH = 5;
+	public static final int QUEST_SPRING_SYMPHONY = 0;
+	public static final int QUEST_SPECTRAL = 1;
+	public static final int QUEST_AUTUMN_APPROACH = 2;
+	public static final int QUEST_WINTER_WONDERLAND = 3;
+	public static final int QUEST_NIGHT_AT_THE_BEACH = 4;
 	
 	public ColourQuest(int r, int g, int b) {
 		this(r, g, b, new Date());

@@ -1,44 +1,17 @@
 package com.availablers.colour;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
 import com.parse.facebook.AsyncFacebookRunner;
-import com.parse.facebook.AsyncFacebookRunner.RequestListener;
-import com.parse.facebook.Facebook;
-import com.parse.facebook.FacebookError;
-import com.parse.facebook.Util;
 
 public class MainActivity extends FragmentActivity implements ActionBar.TabListener {
 	
@@ -47,12 +20,21 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     
     private AsyncFacebookRunner asyncRunner;
     
+    private ColoursFragment mColoursFragment;
+    private QuestFragment mQuestFragment;
+    private AchievementFragment mAchievementFragment;
+    
+    public int mColourQuestSelectedIndex;
+    public int mColourQuestsIndex;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
+    	Log.d("colOUR.MainActivity.lifecycle", "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
+        mColourQuestSelectedIndex = -1;
+        mColourQuestsIndex = -1;
         /*
         Facebook facebook = ParseFacebookUtils.getFacebook();
         asyncRunner = new AsyncFacebookRunner(facebook);
@@ -129,7 +111,6 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section1).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section2).setTabListener(this));
         actionBar.addTab(actionBar.newTab().setText(R.string.title_section3).setTabListener(this));
-    	
         // By default, select tab1
         actionBar.selectTab(actionBar.getTabAt(1));
     }	
@@ -179,13 +160,19 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 		Fragment fragment = null;
 		switch (tab.getPosition()) {
 		case 0:
-			fragment = new ColoursFragment();
+			if (mColoursFragment == null) mColoursFragment = new ColoursFragment();
+			fragment = mColoursFragment;
 			break;
 		case 1:
-			fragment = new QuestFragment();
+			if (mQuestFragment == null) {
+				Log.d("colOUR.MainActivity.lifecycle", "create new QuestFragment");
+				mQuestFragment = new QuestFragment();
+			}
+			fragment = mQuestFragment;
 			break;
 		case 2:
-			fragment = new AchievementFragment();
+			if (mAchievementFragment == null) mAchievementFragment = new AchievementFragment();
+			fragment = mAchievementFragment;
 			break;
 		default:
 			return;
@@ -202,6 +189,12 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 		// TODO Auto-generated method stub
 		
 	}
-    
-    
+
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		Log.d("colOUR.MainActivity.lifecycle", "onSaveInstanceState");
+		super.onSaveInstanceState(outState);
+	}
+	
 }
