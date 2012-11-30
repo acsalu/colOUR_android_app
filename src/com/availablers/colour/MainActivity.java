@@ -3,6 +3,7 @@ package com.availablers.colour;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -10,22 +11,55 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.parse.Parse;
+import com.parse.ParseFacebookUtils;
 import com.parse.ParseUser;
 import com.parse.facebook.AsyncFacebookRunner;
+import com.parse.facebook.Facebook;
 
 public class MainActivity extends FragmentActivity implements ActionBar.TabListener {
 	
+	private static final String PARSE_APP_ID = "zWVIbuBEOCQmQEP8YGdpu9Fag3FdDowmpnogl41x";
+	private static final String PARSE_CLIENT_KEY = "RS2i8WSFWnIgrN3NNFIApvymSEIeddGzyjzpAoMJ";
+	private static final String FACEBOOK_APP_ID = "509468125744251";
 	
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+    private static final String KEY_QUESTS_INDEX = "colour.key.quests_index";
+    private static final String KEY_SELECTED_QUEST_INDEX = "colour.key.selected_quest_index";
     
-    private AsyncFacebookRunner asyncRunner;
+    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
+	private static final int CROP_IMAGE_ACTIVITY_REQUEST_CODE = 200;
+    
+    
+    public AsyncFacebookRunner asyncRunner;
     
     private ColoursFragment mColoursFragment;
     private QuestFragment mQuestFragment;
-    private AchievementFragment mAchievementFragment;
+    private DiscoverFragment mDiscoverFragment;
     
-    public int mColourQuestSelectedIndex;
+    public int mSelectedColourQuestIndex;
     public int mColourQuestsIndex;
+    
+    public Uri fileUri;
+    
+    
+    public boolean isDiscovered;
+    
+    
+    public void setColourQuestsIndex(int i) { 
+    	mColourQuestsIndex = i; 
+    	Log.d("colOUR.MainActivity", "mColourQuestsIndex is set to " + i);
+    }
+    public int getColourQuestsIndex() { return mColourQuestsIndex; }
+    
+    public void setSelectedColourQuestIndex(int i) { 
+    	mSelectedColourQuestIndex = i; 
+    	Log.d("colOUR.MainActivity", "mSelectedColourQuestIndex is set to " + i);
+    }
+    public int getSelectedColourQuestIndex() { return mSelectedColourQuestIndex; }
+    
+    
+    
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,12 +67,16 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        mColourQuestSelectedIndex = -1;
+        initParse();
+        
+        mSelectedColourQuestIndex = -1;
         mColourQuestsIndex = -1;
-        /*
+        
+        this.isDiscovered = false;
+        
         Facebook facebook = ParseFacebookUtils.getFacebook();
         asyncRunner = new AsyncFacebookRunner(facebook);
-        
+        /*
     	asyncRunner.request("me", new RequestListener() {
 
 			@Override
@@ -119,9 +157,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.activity_main, menu);
+        menu.add(0, 0, 0, "Logout");
         return true;
-    	//menu.add(0, 0, 0, "Logout");
-    	//return true;
     }
     
     @Override
@@ -171,8 +208,8 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 			fragment = mQuestFragment;
 			break;
 		case 2:
-			if (mAchievementFragment == null) mAchievementFragment = new AchievementFragment();
-			fragment = mAchievementFragment;
+			if (mDiscoverFragment == null) mDiscoverFragment = new DiscoverFragment();
+			fragment = mDiscoverFragment;
 			break;
 		default:
 			return;
@@ -195,6 +232,26 @@ public class MainActivity extends FragmentActivity implements ActionBar.TabListe
 	protected void onSaveInstanceState(Bundle outState) {
 		Log.d("colOUR.MainActivity.lifecycle", "onSaveInstanceState");
 		super.onSaveInstanceState(outState);
+		outState.putInt(KEY_QUESTS_INDEX, this.mColourQuestsIndex);
+		outState.putInt(KEY_SELECTED_QUEST_INDEX, this.mSelectedColourQuestIndex);
+		
 	}
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		Log.d("colOUR.MainActivity.lifecycle", "onRestoreInstanceState");
+		super.onRestoreInstanceState(savedInstanceState);
+		
+		if (savedInstanceState != null) {
+			mColourQuestsIndex = savedInstanceState.getInt(KEY_QUESTS_INDEX);
+			mSelectedColourQuestIndex = savedInstanceState.getInt(KEY_SELECTED_QUEST_INDEX);
+		}
+	}
+	
+	private void initParse() {
+		Parse.initialize(this, PARSE_APP_ID, PARSE_CLIENT_KEY);
+		ParseFacebookUtils.initialize(FACEBOOK_APP_ID);
+	}
+	
+	
 	
 }

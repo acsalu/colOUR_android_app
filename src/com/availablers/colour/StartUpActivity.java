@@ -1,5 +1,7 @@
 package com.availablers.colour;
 
+import java.util.Arrays;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +13,7 @@ import com.parse.LogInCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseFacebookUtils;
+import com.parse.ParseFacebookUtils.Permissions;
 import com.parse.ParseUser;
 
 public class StartUpActivity extends Activity {
@@ -53,6 +56,27 @@ public class StartUpActivity extends Activity {
 		this.buttonLogin.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				ParseFacebookUtils.logIn(Arrays.asList("publish_stream", "user_photos"), StartUpActivity.this, new LogInCallback() {
+					  @Override
+					  public void done(ParseUser user, ParseException err) {
+					    if (user == null) {
+					      Log.d("MyApp", "Uh oh. The user cancelled the Facebook login.");
+					      return;
+					    } else if (user.isNew()) {
+					      Log.d("MyApp", "User signed up and logged in through Facebook!");
+					    } else {
+					      Log.d("MyApp", "User logged in through Facebook!");
+					    } 
+					    
+					    Intent intent = new Intent(getBaseContext(), MainActivity.class);
+					    startActivity(intent);
+					    finish();
+					    
+					  }
+				});
+				
+				/*
+				
 				ParseFacebookUtils.logIn(StartUpActivity.this, new LogInCallback() {
 					  @Override
 					  public void done(ParseUser user, ParseException err) {
@@ -71,6 +95,7 @@ public class StartUpActivity extends Activity {
 					    
 					  }
 				});
+				*/
 			}
 		});
 	}

@@ -1,11 +1,19 @@
 package com.availablers.colour;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Random;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -23,8 +31,13 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
+
+import com.parse.ParseFacebookUtils;
+import com.parse.ParseFile;
+import com.parse.ParseObject;
+import com.parse.facebook.AsyncFacebookRunner;
+import com.parse.facebook.AsyncFacebookRunner.RequestListener;
+import com.parse.facebook.FacebookError;
 
 public class QuestFragment extends Fragment {
 	
@@ -50,6 +63,8 @@ public class QuestFragment extends Fragment {
 			Log.d("colOUR.colour", "quest: (H, S, V) = " + colourQuests[b.getId()] + " is selected");
 			selectedColourQuestIndex = b.getId();	
 			selectedColourQuest = colourQuests[b.getId()];
+			((MainActivity) getActivity()).setSelectedColourQuestIndex(selectedColourQuestIndex);
+			
 			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 			QuestFragment.this.startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
 		}
@@ -77,25 +92,32 @@ public class QuestFragment extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		findViews();
 		
-
+		MainActivity activity = (MainActivity) getActivity();
 		
-		if (savedInstanceState != null) {
+		if (activity.mColourQuestsIndex != -1) {
+		//if (savedInstanceState != null) {
 			Log.d("colOUR.activity", "onActivityCreated w/ savedInstanceState");
-			
+			/*
 			selectedColourQuestIndex = savedInstanceState.getInt(QUEST_KEY_SELECTED_QUEST_INDEX);
 			colourQuestsIndex = savedInstanceState.getInt(QUEST_KEY_QUESTS_INDEX);
+			*/
+		
+			colourQuestsIndex = activity.mColourQuestsIndex;
+			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
 			
 			Log.d("colOUR.activity", "selectedColourQuestIndex = " + selectedColourQuestIndex);
 			Log.d("colOUR.activity", "colourQuestsIndex = " + colourQuestsIndex);
 			
-			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
-			selectedColourQuest = colourQuests[selectedColourQuestIndex];
+			if (activity.mSelectedColourQuestIndex != -1 ){
+				selectedColourQuestIndex = activity.mSelectedColourQuestIndex;
+				selectedColourQuest = colourQuests[selectedColourQuestIndex];
+			}
 		} else {
 			Log.d("colOUR.activity", "onActivityCreated w/o savedInstanceState");
 			
 			Random r = new Random();
 			colourQuestsIndex = r.nextInt(5 - 0);
-			
+			activity.setColourQuestsIndex(colourQuestsIndex);
 			Log.d("colOUR.activity", "colourQuestsIndex = " + colourQuestsIndex);
 			colourQuests = ColourQuest.getColourQuests(colourQuestsIndex);
 		}
@@ -118,6 +140,7 @@ public class QuestFragment extends Fragment {
 			questButton.setLayoutParams(new LayoutParams(size.x / colourQuests.length, 500));
 			questButton.setBackgroundColor(colourQuests[i] .getColor());
 			layout.addView(questButton);
+			questButton.setHapticFeedbackEnabled(true);
 			questButton.setOnClickListener(imageCaptureListener);
 			questButton.setId(i);
 		}
@@ -136,12 +159,16 @@ public class QuestFragment extends Fragment {
 			Log.d("colOUR.activity", "data is null");
 		}
 		
+		
 		switch (requestCode) {
 		case CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE: 
 			if (resultCode == Activity.RESULT_OK) {
-				Toast.makeText(getActivity(), "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
+				Log.d("colOUR.QuestFragment.onActivityResult", "back from Camera");
+				//Toast.makeText(getActivity(), "Image saved to:\n" + data.getData(), Toast.LENGTH_LONG).show();
 				fileUri = data.getData();
 				//performCrop();
+				MainActivity activity = (MainActivity) getActivity();
+				activity.fileUri = fileUri;
 				Bundle extras = data.getExtras();
 				//File imgFile = new File(fileUri.toString());
 				//Bitmap pic = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
@@ -149,36 +176,123 @@ public class QuestFragment extends Fragment {
 				//imageResult.setImageURI(null);
 				//imageResult.setImageURI(fileUri);
 				performCrop();
-			} else if (resultCode == Activity.RESULT_CANCELED) {
-				// User cancelled the image capture
-				// nothing should happen
 			}
 			break;
 		case CROP_IMAGE_ACTIVITY_REQUEST_CODE:
 			if (resultCode == Activity.RESULT_OK) {
+				Log.d("colOUR.QuestFragment.onActivityResult", "back from Crop");
 				Bundle extras = data.getExtras();
-				Bitmap pic = extras.getParcelable("data");
+				Bitmap pic = null;
+				if (extras != null) {
+					pic = extras.getParcelable("data");
+				} else {
+					Uri uri = data.getData();
+					if (uri != null) pic = BitmapFactory.decodeFile(uri.getPath());
+				}
 				
 				int[] averageARGB = averageARGB(pic);
 				float[] resultHSV = new float[3];
 				Color.RGBToHSV(averageARGB[1], averageARGB[2], averageARGB[3], resultHSV);
+				final MainActivity activity = (MainActivity) getActivity();
+				selectedColourQuest = ColourQuest.getColourQuests(activity.mColourQuestsIndex)[activity.mSelectedColourQuestIndex];
 				if (selectedColourQuest == null) {
 					Log.d("colOUR.activity", "GG");
 				} else {
+					Log.d("colOUR.QuestFragment.onActivityResult", "Not GG");
 					Log.d("colOUR.colour", "quest:  (H, S, V) = " + selectedColourQuest.toString());
 				}
 				Log.d("colOUR.colour", "result: (H, S, V) = (" + resultHSV[0] + ", " + resultHSV[1] + ", " + resultHSV[2] + ")");
 				
 				
-				/*
+				
 				if (isHsvMatch(selectedColourQuest.getHSV(), resultHSV)) {
-					Toast.makeText(getActivity(), "Pass!!!", Toast.LENGTH_LONG).show();
+					AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+					
+					builder.setTitle("Quest Complete");
+					builder.setMessage("Congrats! You've discovered a new color!");
+					builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							
+							
+						}
+					});
+					
+					builder.setNegativeButton("Share", new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							Bundle params = new Bundle();
+							params.putString("message", "Does it work?");
+							
+							AsyncFacebookRunner asyncRunner = new AsyncFacebookRunner(ParseFacebookUtils.getFacebook());
+							
+							asyncRunner.request("me/feed", params, "POST", new RequestListener() {
+
+								@Override
+								public void onComplete(String arg0, Object arg1) {
+									// TODO Auto-generated method stub
+									Log.d("colOUR.Facebook", arg0);
+									
+								}
+
+								@Override
+								public void onFacebookError(FacebookError arg0, Object arg1) { }
+
+								@Override
+								public void onFileNotFoundException(FileNotFoundException arg0, Object arg1) { }
+
+								@Override
+								public void onIOException(IOException arg0, Object arg1) { }
+
+								@Override
+								public void onMalformedURLException(MalformedURLException arg0, Object arg1) {}
+							}, null);
+							
+						}
+					});
+					
+					builder.show();
+					
+					// upload to server
+					ParseObject colour = new ParseObject("Colour");
+					colour.put("r", selectedColourQuest.r);
+					colour.put("g", selectedColourQuest.g);
+					colour.put("b", selectedColourQuest.b);
+					
+					File imgFile = new File(activity.fileUri.toString());
+					Bitmap bitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+					byte[] uploadData = Bitmap2Bytes(bitmap);
+					ParseFile file = new ParseFile("colour_quest.png", uploadData);
+					file.saveInBackground();
+					
+					colour.put("imageFile", file);
+					colour.saveInBackground();
+					
+					
+				
+					
+					
 				} else {
-					Toast.makeText(getActivity(), "Failed...", Toast.LENGTH_LONG).show();
+					
+					AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+					
+					builder.setTitle("Quest Failed");
+					builder.setMessage("Sorry! The color you found doesn't match. Never mind!");
+					builder.setPositiveButton("Keep Looking", new DialogInterface.OnClickListener() {
+						
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+						}
+					});
+					
+					builder.show();
 				}
-				*/
 				//imageResult.setImageBitmap(pic);
+				
 			}
+			break;
 			
 		}
 		
@@ -242,9 +356,17 @@ public class QuestFragment extends Fragment {
 	}
 	
 	private static boolean isHsvMatch(float[] quest, float[] result) {
-		return ((result[0] <= quest[0] + 5 || result[0] >= quest[0] - 5) &&
-				(result[1] <= quest[1] + 0.1 || result[1] >= quest[1] - 0.1) &&
-				(result[2] <= quest[2] + 0.1 || result[2] >= quest[2] - 0.1));
+		Log.d("colOUR.QuestFragment.isHsvMatch", "quest:(" + quest[0] + ", " + quest[1] + ", " + quest[2] + ")");
+		Log.d("colOUR.QuestFragment.isHsvMatch", "result:(" + result[0] + ", " + result[1] + ", " + result[2] + ")");
+		boolean conditionH = (result[0] <= quest[0] + 20 && result[0] >= quest[0] - 20);
+		boolean conditionS = (result[1] <= quest[1] + 0.3 && result[1] >= quest[1] - 0.3);
+		boolean conditionV = (result[2] <= quest[2] + 0.4 && result[2] >= quest[2] - 0.4);
+		
+		if (conditionH) Log.d("colOUR.QuestFragment.isHsvMatch", "conditionH pass!");
+		if (conditionS) Log.d("colOUR.QuestFragment.isHsvMatch", "conditionS pass!");
+		if (conditionV) Log.d("colOUR.QuestFragment.isHsvMatch", "conditionV pass!");
+		
+		return (conditionH && conditionS && conditionV);
 	}
 
 	
@@ -327,7 +449,11 @@ public class QuestFragment extends Fragment {
     }
     */
 	
-	
+	public static byte[] Bitmap2Bytes(Bitmap bm) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		bm.compress(Bitmap.CompressFormat.PNG, 100, baos);
+		return baos.toByteArray();
+	}
 	
 	
 	
